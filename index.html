@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panduan Interaktif Aplikasi PARHATA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Serene Sky -->
+    <!-- Application Structure Plan: Aplikasi ini diubah menjadi dasbor satu halaman dengan kartu interaktif. Setiap kartu mewakili menu utama di aplikasi PARHATA (Alur Kerja, Sertifikasi, dll.). Saat diklik, sebuah pop-up (modal) muncul dengan konten detail dari bagian tersebut, termasuk alat interaktif seperti validator dan kalkulator. Logika pencarian terintegrasi untuk menyaring kartu yang ditampilkan di dasbor serta menyoroti teks di dalam modal. Arsitektur ini dipilih untuk meminimalkan scrolling, menyajikan informasi secara modular, dan membuat pengalaman pengguna terasa lebih dinamis, efisien, dan modern. -->
+    <!-- Visualization & Content Choices: Konten tetap berbasis teks dan alat interaktif, tetapi presentasinya diubah. Diagram alur kerja statis, validator dokumen, dan kalkulator dampak diintegrasikan ke dalam modal yang relevan. Tidak ada visualisasi data tradisional seperti diagram batang, karena konten lebih bersifat prosedural dan informatif. Pilihan ini mendukung desain yang bersih, fokus pada interaksi, dan konsisten dengan format panduan. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            transform: translateY(-2px);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.3s, opacity 0.3s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .result-box {
+            border-left: 4px solid;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 0.25rem;
+        }
+        .result-valid {
+            background-color: #f0fdf4;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+        .result-invalid {
+            background-color: #fef2f2;
+            border-color: #ef4444;
+            color: #b91c1c;
+        }
+        .result-info {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="min-h-screen container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-sky-700">Panduan Interaktif Aplikasi PARHATA</h1>
+            <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">Alat bantu untuk memahami alur kerja dan pengisian data di aplikasi PARHATA dengan lebih mudah dan akurat.</p>
+            
+            <div class="mt-8 p-4 md:p-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 text-left rounded-lg shadow-md max-w-4xl mx-auto">
+                <p class="font-bold text-lg mb-2">📢 Informasi Penting!</p>
+                <p>Mulai sekarang, semua dokumen (pelatihan, sertifikasi, bimtek, webinar, e-learning) yang diinput ke sistem harus memiliki masa berlaku maksimal **3 tahun** sejak tanggal penerbitan. Dokumen yang melewati batas waktu ini akan otomatis dikeluarkan dari daftar penilaian. Mohon perhatikan tahun terbit dokumen Anda.</p>
+            </div>
+        </header>
+
+        <main class="w-full">
+            <div class="mb-8 flex flex-col md:flex-row gap-4">
+                <input type="text" id="search-bar" placeholder="🔍 Cari informasi (contoh: sertifikasi, bimtek, dampak)" class="w-full md:w-3/4 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-shadow">
+                <button id="show-ask-form-btn" class="w-full md:w-1/4 bg-sky-600 text-white font-bold p-3 rounded-lg hover:bg-sky-700 transition-colors">Ajukan Pertanyaan 💬</button>
+            </div>
+
+            <div id="dashboard-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will be populated here by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal untuk form pertanyaan -->
+    <div id="ask-modal" class="modal-overlay">
+        <div class="modal-content relative p-8 md:p-10 w-full max-w-2xl">
+            <button id="close-ask-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold">×</button>
+            <h2 class="text-2xl font-bold text-sky-700 mb-4">Ajukan Pertanyaan, Kendala, atau Keluhan</h2>
+            <p class="text-sm text-slate-600 mb-6">Mohon lengkapi formulir di bawah ini. Pertanyaan Anda akan masuk ke dalam daftar monitoring dan dijawab oleh tim admin.</p>
+            <form id="ask-form" class="space-y-4">
+                <div>
+                    <label for="nama_pegawai" class="block text-sm font-medium text-slate-700">Nama Pegawai</label>
+                    <input type="text" id="nama_pegawai" name="nama_pegawai" class="mt-1 block w-full p-2 border border-slate-300 rounded-md shadow-sm" required>
+                </div>
+                <div>
+                    <label for="nip" class="block text-sm font-medium text-slate-700">NIP</label>
+                    <input type="text" id="nip" name="nip" class="mt-1 block w-full p-2 border border-slate-300 rounded-md shadow-sm" required>
+                </div>
+                <div>
+                    <label for="pertanyaan" class="block text-sm font-medium text-slate-700">Pertanyaan</label>
+                    <textarea id="pertanyaan" name="pertanyaan" rows="4" class="mt-1 block w-full p-2 border border-slate-300 rounded-md shadow-sm" required></textarea>
+                </div>
+                <button type="submit" class="w-full bg-sky-600 text-white font-bold py-2 px-4 rounded-md hover:bg-sky-700 transition-colors">Kirim Pertanyaan</button>
+                <div id="form-message" class="mt-4 text-center"></div>
+            </form>
+            <div class="mt-6 text-center">
+                <p class="text-sm text-slate-600 mb-2">
+                    Setelah pertanyaan terkirim, Anda bisa melihat status dan jawaban admin di sheet monitoring berikut:
+                </p>
+                <a href="https://docs.google.com/spreadsheets/d/1Lebrb_zCbFsJCywb3ObHEqUr3sax7KH-nqBsTrbtU8Q/edit?usp=sharing" target="_blank" class="inline-block text-sky-600 hover:text-sky-800 font-semibold transition-colors">
+                    Lihat Daftar Pertanyaan dan Jawaban Admin
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal untuk menampilkan konten -->
+    <div id="info-modal" class="modal-overlay">
+        <div class="modal-content relative p-8">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-2xl font-bold">×</button>
+            <div id="modal-body">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-6 bg-slate-100 mt-12">
+        <p class="text-slate-500">Aplikasi Panduan Interaktif PARHATA &copy; 2025</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dashboardGrid = document.getElementById('dashboard-grid');
+            const searchBar = document.getElementById('search-bar');
+            const infoModal = document.getElementById('info-modal');
+            const modalBody = document.getElementById('modal-body');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const askModal = document.getElementById('ask-modal');
+            const showAskFormBtn = document.getElementById('show-ask-form-btn');
+            const closeAskModalBtn = document.getElementById('close-ask-modal-btn');
+            const askForm = document.getElementById('ask-form');
+            const formMessage = document.getElementById('form-message');
+            const currentYear = 2025;
+            
+            // This URL is a placeholder. You MUST replace it with your actual deployed Google Apps Script Web App URL.
+            const scriptUrl = 'https://script.google.com/macros/s/AKfycbx_YOUR_APP_SCRIPT_ID_HERE/exec'; 
+
+            const contentData = [
+                {
+                    id: 'alur-kerja',
+                    title: '🚀 Alur Kerja Utama',
+                    emoji: '🚀',
+                    summary: 'Pahami di mana Anda harus menginput data, baik di SIMPEG maupun PARHATA.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">🚀 Alur Kerja Utama</h2>
+                        <p class="text-slate-600 mb-8">Pahami di mana Anda harus menginput data. Alur ini menunjukkan hubungan antara Anda, SIMPEG, dan PARHATA.</p>
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-center">
+                            <div class="w-full md:w-1/4">
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h3 class="font-bold text-lg">ANDA (PEGAWAI)</h3>
+                                    <p class="text-sm">Menginput data</p>
+                                </div>
+                            </div>
+                            <div class="text-4xl text-sky-500 font-mono self-center transform md:rotate-0 rotate-90">→</div>
+                            <div class="w-full md:w-2/4 grid grid-cols-1 gap-4">
+                                <div class="p-4 bg-sky-100 border-2 border-sky-200 rounded-lg">
+                                    <h3 class="font-bold text-lg">SIMPEG</h3>
+                                    <p class="text-sm font-semibold">Input di sini:</p>
+                                    <ul class="text-xs list-disc list-inside mt-1">
+                                        <li>Pelatihan</li>
+                                        <li>Bimtek</li>
+                                        <li>Seminar / Webinar</li>
+                                    </ul>
+                                </div>
+                                <div class="p-4 bg-green-100 border-2 border-green-200 rounded-lg">
+                                    <h3 class="font-bold text-lg">PARHATA</h3>
+                                    <p class="text-sm font-semibold">Input di sini:</p>
+                                    <ul class="text-xs list-disc list-inside mt-1">
+                                        <li>Sertifikasi Profesional</li>
+                                        <li>Pencapaian Kinerja</li>
+                                        <li>Peran dalam Tim</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="text-4xl text-sky-500 font-mono self-center transform md:rotate-0 rotate-90">→</div>
+                            <div class="w-full md:w-1/4">
+                                <div class="p-4 bg-slate-100 rounded-lg">
+                                    <h3 class="font-bold text-lg">DATABASE</h3>
+                                    <p class="text-sm">Data terverifikasi</p>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    id: 'perbedaan-sertifikat',
+                    title: '⚖️ Perbedaan Dokumen',
+                    emoji: '⚖️',
+                    summary: 'Pahami perbedaan mendasar antara Sertifikat Kehadiran dan Sertifikasi Kompetensi.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">⚖️ Perbedaan Dokumen</h2>
+                        <p class="text-slate-600 mb-8">Untuk memudahkan pemahaman, berikut perbedaan mendasar antara Sertifikat Kehadiran dan Sertifikasi Kompetensi, sesuai dengan peraturan yang berlaku.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="p-4 bg-sky-100 rounded-xl mb-4">
+                                    <span class="text-4xl">📜</span>
+                                </div>
+                                <h3 class="font-bold text-xl text-sky-700">Sertifikat (Pelatihan, Bimtek, Seminar)</h3>
+                                <ul class="list-disc list-inside text-left mt-4 text-sm text-slate-600 space-y-2">
+                                    <li><strong>Tujuan:</strong> Menambah wawasan dan pengetahuan.</li>
+                                    <li><strong>Proses:</strong> Hanya perlu hadir dan mengikuti kegiatan.</li>
+                                    <li><strong>Bukti:</strong> Menunjukkan partisipasi, bukan validasi kompetensi formal.</li>
+                                    <li><strong>Contoh:</strong> Sertifikat Pelatihan Manajemen Keuangan, Sertifikat Bimtek Pengadaan.</li>
+                                </ul>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="p-4 bg-green-100 rounded-xl mb-4">
+                                    <span class="text-4xl">🏅</span>
+                                </div>
+                                <h3 class="font-bold text-xl text-green-700">Sertifikasi Profesional (UKOM)</h3>
+                                <ul class="list-disc list-inside text-left mt-4 text-sm text-slate-600 space-y-2">
+                                    <li><strong>Tujuan:</strong> Mengakui kompetensi kerja sesuai standar nasional.</li>
+                                    <li><strong>Proses:</strong> Wajib lulus **Uji Kompetensi (UKOM)** yang ketat.</li>
+                                    <li><strong>Bukti:</strong> Bukti otentik bahwa Anda kompeten dan sah secara hukum untuk melaksanakan tugas tertentu.</li>
+                                    <li><strong>Contoh:</strong> Sertifikasi Auditor, Sertifikasi Pengadaan Barang/Jasa (PBJ).</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-8 text-center text-slate-600"><strong>Kesimpulan untuk Penilaian:</strong> Fokus penilaian adalah pada **Sertifikasi Profesional** sebagai bukti pengakuan kompetensi, bukan hanya bukti kehadiran.</p>
+                    `
+                },
+                {
+                    id: 'riwayat-jabatan',
+                    title: '💼 Riwayat Jabatan',
+                    emoji: '💼',
+                    summary: 'Panduan untuk melengkapi relevansi dan dampak pada data Riwayat Jabatan yang ditarik dari SIMPEG.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">💼 Riwayat Jabatan</h2>
+                        <p class="text-slate-600 mb-4">
+                            Data riwayat jabatan Anda secara otomatis ditarik dari SIMPEG. Untuk melengkapi data relevansi dan dampak, Anda perlu mengklik tombol "Lengkapi".
+                        </p>
+                        <p class="text-slate-600 mb-8">
+                            Pertanyaan tentang <strong>"Jabatan sebagian besar mendukung dan relevan dengan tugas saat ini"</strong> harus dijawab dengan melihat sejauh mana pengalaman dan pengetahuan dari jabatan sebelumnya masih relevan dan memberikan kontribusi positif pada tugas dan tanggung jawab Anda saat ini.
+                        </p>
+                        
+                        <div class="p-4 bg-sky-50 border-l-4 border-sky-400 rounded-lg">
+                            <p class="font-bold text-sky-700">Mengapa harus dikaitkan dengan tugas saat ini?</p>
+                            <p class="text-sm text-slate-600 mt-2">
+                                Penilaian ini penting untuk mengukur <strong>portofolio kompetensi</strong> Anda. Pengalaman di jabatan sebelumnya akan dianggap relevan jika memberikan fondasi kuat atau keahlian tambahan yang membantu Anda sukses dalam peran Anda saat ini. Ini membantu tim penilai memahami bagaimana perjalanan karier Anda membentuk kompetensi yang Anda miliki saat ini.
+                            </p>
+                        </div>
+    
+                        <p class="mt-6 text-slate-600">
+                            <strong>Catatan penting:</strong> Saat ini, menu <strong>Riwayat Pendidikan</strong> (tingkat SD sampai SMA) diabaikan dan tidak dinilai. Penilaian hanya berlaku untuk pendidikan setingkat D3 ke atas.
+                        </p>
+                    `
+                },
+                {
+                    id: 'sertifikasi-profesional',
+                    title: '🎓 Sertifikasi Profesional',
+                    emoji: '?',
+                    summary: 'Pahami kategori sertifikasi profesional seperti UKOM, PBJ, Auditor, dan bagaimana cara menginputnya.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">🎓 Kategori Sertifikasi Profesional</h2>
+                        <p class="text-slate-600 mb-8">Sertifikasi profesional adalah bukti kompetensi yang diperoleh melalui Uji Kompetensi (UKOM) dan diakui oleh lembaga yang berwenang. Ini berbeda dengan sertifikat pelatihan yang hanya membuktikan kehadiran. Berikut adalah kategori dan contoh sertifikasi profesional yang dapat Anda input di PARHATA.</p>
+                        <ul class="list-disc list-inside space-y-2 text-slate-700">
+                            <li><strong>Pengadaan Barang dan Jasa (PBJ):</strong> Sertifikat kompetensi yang dikeluarkan oleh LKPP.</li>
+                            <li><strong>Uji Kompetensi (UKOM):</strong> Sertifikasi yang spesifik untuk Jabatan Fungsional Tertentu.</li>
+                            <li><strong>Auditor:
+                                </strong> Sertifikasi yang dikeluarkan oleh lembaga seperti BPKP atau badan auditor profesional lainnya.</li>
+                            <li><strong>Perencanaan:</strong> Sertifikasi yang berkaitan dengan perencanaan pembangunan atau kebijakan.</li>
+                            <li><strong>Bendahara:</strong> Sertifikasi kompetensi untuk posisi bendahara pemerintah.</li>
+                            <li><strong>Penilaian Risiko:</strong> Sertifikasi yang relevan dengan manajemen risiko.</li>
+                        </ul>
+                        <p class="mt-6 text-slate-600"><strong>Catatan untuk Tim Penilai:</strong> Sertifikasi ini harus dibedakan dari sertifikat pelatihan berdasarkan adanya proses uji kompetensi yang ketat, bukan hanya jumlah jam pelajaran (JP).</p>
+                    `
+                },
+                {
+                    id: 'pencapaian-kinerja',
+                    title: '🏆 Pencapaian Kinerja',
+                    emoji: '🏆',
+                    summary: 'Alat untuk menentukan predikat dan dampak kinerja.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-2 text-sky-700">🏆 Kalkulator Pencapaian Kinerja</h2>
+                        <p class="text-slate-600 mb-8">Tentukan predikat dan dampak dari pencapaian kinerja Anda secara otomatis.</p>
+                        
+                        <label for="achievement-type" class="font-semibold block mb-2">Pilih Jenis Pencapaian Kinerja:</label>
+                        <div class="flex items-center gap-4">
+                            <select id="achievement-type" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="penghargaan-terbaik">Penghargaan (Terbaik I, II, III, dst)</option>
+                                <option value="ketua-tim">Peran sebagai Ketua Tim</option>
+                                <option value="anggota-tim">Peran sebagai Anggota Tim</option>
+                                <option value="plt">Peran sebagai Plt.</option>
+                                <option value="tanpa-penghargaan">Tim Kerja (Tidak Ada Penghargaan)</option>
+                            </select>
+                        </div>
+    
+                        <div id="achievement-result" class="mt-6"></div>
+    
+                        <div class="mt-8 text-slate-600">
+                            <p class="font-bold">Informasi Tambahan untuk Tim Penilai:</p>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li>Untuk <strong>penghargaan selain tabel</strong>, mohon didata secara berkala siapa saja yang mendapatkannya agar proses penilaian dapat dilakukan secara lebih efisien.</li>
+                                <li>Predikat <strong>"Sesuai Ekspektasi"</strong> adalah kategori default yang diambil dari SKP, kecuali ada bukti jelas dari PPK bahwa kinerja pegawai <strong>"Di Atas Ekspektasi"</strong>.</li>
+                            </ul>
+                        </div>
+                    `
+                },
+                {
+                    id: 'alur-data',
+                    title: '🔄 Alur Data & Sinkronisasi',
+                    emoji: '?',
+                    summary: 'Pahami bagaimana data berpindah dari SIMPEG ke PARHATA dan solusi untuk kendala umum.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">🔄 Alur Data & Sinkronisasi</h2>
+                        <p class="text-slate-600 mb-8">Bagian ini menjelaskan bagaimana data Anda berpindah dari SIMPEG ke PARHATA dan memberikan panduan untuk beberapa kendala umum.</p>
+    
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 mb-2">Sinkronisasi Data Otomatis</h3>
+                                <p class="text-slate-600">Semua data pelatihan dan seminar yang diunggah dan sudah divalidasi di <strong>SIMPEG</strong> akan ditarik ke PARHATA secara otomatis oleh sistem pada jam 00:00 WIB setiap harinya. Setelah itu, akan muncul status <strong>"Disetujui"</strong> atau <strong>"Ditolak"</strong> di PARHATA.
+                                </p>
+                                <p class="mt-2 text-red-600"><strong>Catatan penting:</strong> Proses penarikan ini hanya berlaku untuk dokumen yang diterbitkan pada <strong>tahun 2023 ke atas</strong>.</p>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 mb-2">Penarikan Data Riwayat</h3>
+                                <p class="text-slate-600">Saat ini, data <strong>Riwayat Pendidikan</strong> (D3 ke atas) dan <strong>Riwayat Jabatan</strong> sudah ditarik dan disetujui secara otomatis. Oleh karena itu, Anda tetap perlu melengkapi data di menu <strong>Riwayat Jabatan</strong> (klik <strong>"Lengkapi"</strong>) untuk mengisi relevansi dan dampak. Fokus pengisian manual hanya pada <strong>Sertifikasi</strong> dan <strong>Pencapaian Kinerja</strong>.</p>
+                            </div>
+    
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 mb-2">Kasus Khusus: Sertifikat PPSPM</h3>
+                                <p class="text-slate-600">Jika Anda sudah mengikuti diklat PPSPM dan sudah mengusulkan SNT di SIMASPATEN, namun sertifikat belum tersedia, Anda harus menunggu hingga sertifikat tersebut diterbitkan. <strong>Bukti yang diakui untuk penilaian tetap sertifikat, bukan hanya screenshot atau bukti pengajuan.</strong></p>
+                                <p class="mt-2">Disarankan untuk mengunggahnya pada periode penilaian berikutnya setelah sertifikat sudah Anda miliki.</p>
+                            </div>
+                            
+                            <div>
+                                 <h3 class="font-bold text-xl text-sky-700 mb-2">Link Monitoring Data</h3>
+                                 <p class="text-slate-600">Jika Anda menemukan data yang tidak sesuai antara SIMPEG dan PARHATA, atau jika ada jabatan yang terekam tapi tidak pernah Anda jabat, silakan sampaikan keluhan Anda di **file monitoring** yang dikirimkan ke setiap kasubbag. File ini penting untuk memastikan akurasi data portofolio.</p>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    id: 'tanya-jawab',
+                    title: '❓ Tanya Jawab Umum (FAQ)',
+                    emoji: '?',
+                    summary: 'Kumpulan pertanyaan umum dan solusinya, termasuk validator URL interaktif.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">❓ Tanya Jawab Umum (FAQ)</h2>
+                        <div class="space-y-4">
+                            <div class="faq-item border-b border-slate-200 pb-4">
+                                <div class="faq-question flex justify-between items-center">
+                                    <h3 class="font-semibold text-lg">Bagaimana cara mengukur tingkat relevansi dan dampak di aplikasi PARHATA?</h3>
+                                    <span class="text-2xl text-sky-600 transform transition-transform faq-arrow">▼</span>
+                                </div>
+                                <div class="faq-answer text-slate-600 pt-2">
+                                    <p>Anda bisa menggunakan <strong>Kalkulator Pencapaian Kinerja</strong> yang tersedia di panduan ini untuk mendapatkan gambaran awal. Secara umum, tingkat dampak ditentukan dari peran Anda dalam sebuah tim atau tugas.</p>
+                                    <ul class="list-disc list-inside mt-2">
+                                        <li><strong>Dampak Sedang:</strong> Jika Anda berperan sebagai <strong>Ketua Tim</strong> atau <strong>Kasubbag</strong>.</li>
+                                        <li><strong>Dampak Rendah:</strong> Jika Anda berperan sebagai <strong>Anggota Tim</strong>.</li>
+                                    </ul>
+                                </div>
+                            </div>
+    
+                            <div class="faq-item border-b border-slate-200 pb-4">
+                                <div class="faq-question flex justify-between items-center">
+                                    <h3 class="font-semibold text-lg">Apakah pengisian riwayat jabatan di PARHATA bersifat penilaian pribadi?</h3>
+                                    <span class="text-2xl text-sky-600 transform transition-transform faq-arrow">▼</span>
+                                </div>
+                                <div class="faq-answer text-slate-600 pt-2">
+                                    <p>Betul. Pengisian di PARHATA pada dasarnya adalah <strong>klaim dari pegawai</strong>. Namun, semua data yang Anda masukkan akan tetap melalui proses <strong>verifikasi dan validasi (verval)</strong> oleh Tim Penilai Kinerja di Provinsi sebelum disetujui.</p>
+                                </div>
+                            </div>
+    
+                            <div class="faq-item border-b border-slate-200 pb-4">
+                                <div class="faq-question flex justify-between items-center">
+                                    <h3 class="font-semibold text-lg">Mengapa data pelatihan dan seminar saya tidak muncul di PARHATA?</h3>
+                                    <span class="text-2xl text-sky-600 transform transition-transform faq-arrow">▼</span>
+                                </div>
+                                <div class="faq-answer text-slate-600 pt-2">
+                                    <p>Data pelatihan, bimtek, dan seminar diambil dari SIMPEG. Ada dua kemungkinan utama jika data tidak muncul:</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1">
+                                        <li>Data Anda masih dalam proses verifikasi oleh Tim SDM Provinsi. Data baru akan ditarik ke PARHATA setelah diverifikasi.</li>
+                                        <li>Dokumen tersebut diterbitkan **sebelum tahun 2023**. Sesuai aturan, PARHATA hanya menarik data dari tahun 2023 ke atas.</li>
+                                    </ul>
+                                    <p class="mt-2">Jika kedua kondisi di atas tidak terpenuhi, silakan laporkan melalui file monitoring yang dibagikan oleh Tim SDM.</p>
+                                </div>
+                            </div>
+    
+                            <div class="faq-item border-b border-slate-200 pb-4">
+                                <div class="faq-question flex justify-between items-center">
+                                    <h3 class="font-semibold text-lg">Apa penyebab "Akses ditolak" atau website tidak aman?</h3>
+                                    <span class="text-2xl text-sky-600 transform transition-transform faq-arrow">▼</span>
+                                </div>
+                                <div class="faq-answer text-slate-600 pt-2">
+                                    <p>Pesan ini biasanya muncul karena masalah keamanan jaringan atau akses yang dibatasi. Coba gunakan alat di bawah ini untuk memeriksa URL:</p>
+                                    <div class="mt-4 flex flex-col gap-2">
+                                        <input type="text" id="url-input" placeholder="Masukkan URL, contoh: https://parhata.bps.web.id" class="p-3 border border-slate-300 rounded-lg">
+                                        <button id="check-url-btn" class="bg-sky-600 text-white font-bold p-3 rounded-lg hover:bg-sky-700 transition-colors">Periksa URL ✨</button>
+                                    </div>
+                                    <div id="url-result" class="mt-4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `
+                },
+                {
+                    id: 'monitoring-data',
+                    title: '📁 Monitoring Ketidaksesuaian Data antara SIMPEG dan PARHATA',
+                    emoji: '?',
+                    summary: 'Laporkan data yang tidak sesuai atau tidak muncul di PARHATA melalui form monitoring.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">📁 Monitoring Ketidaksesuaian Data antara SIMPEG dan PARHATA</h2>
+                        <p class="text-slate-600 mb-4">
+                            Untuk memastikan akurasi data portofolio, silakan gunakan form monitoring ini jika Anda menemukan ketidaksesuaian data antara SIMPEG dan PARHATA.
+                        </p>
+                        <p class="text-slate-600 mb-8">
+                            Disarankan untuk mengisi form ini jika ada jabatan yang terekam tapi tidak pernah dijabat, atau jika data pelatihan/seminar yang sudah diunggah di SIMPEG tidak muncul di PARHATA.
+                        </p>
+                        <div class="mt-4 text-center">
+                            <a href="https://docs.google.com/spreadsheets/d/14k6czCRRfYzM8xbBr5ptm6GFyIW8oTjzc7Gg8kXGl7Q/edit?usp=sharing" target="_blank" class="inline-block bg-sky-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-sky-700 transition-colors text-lg">
+                                Buka Form Monitoring ✨
+                            </a>
+                            <p class="text-sm text-slate-500 mt-2">
+                                Pastikan untuk mengisi dengan data yang akurat.
+                            </p>
+                        </div>
+                    `
+                }
+            ];
+
+            function renderCards(filterQuery = '') {
+                dashboardGrid.innerHTML = '';
+                const filteredContent = contentData.filter(item => 
+                    item.title.toLowerCase().includes(filterQuery.toLowerCase()) || 
+                    item.summary.toLowerCase().includes(filterQuery.toLowerCase())
+                );
+                
+                if (filteredContent.length === 0) {
+                    dashboardGrid.innerHTML = `<p class="col-span-full text-center text-slate-500 text-lg">Tidak ada hasil yang ditemukan untuk "${filterQuery}".</p>`;
+                    return;
+                }
+
+                filteredContent.forEach(item => {
+                    const card = document.createElement('div');
+                    card.classList.add('card', 'p-6', 'flex', 'flex-col', 'gap-4');
+                    card.dataset.id = item.id;
+                    card.innerHTML = `
+                        <h3 class="text-xl font-bold text-sky-700 flex items-center gap-2">${item.emoji} ${item.title}</h3>
+                        <p class="text-slate-600 text-sm flex-grow">${item.summary}</p>
+                        <span class="text-sm text-sky-500 font-semibold">Klik untuk detail →</span>
+                    `;
+                    dashboardGrid.appendChild(card);
+                });
+            }
+
+            renderCards();
+
+            searchBar.addEventListener('input', (e) => {
+                renderCards(e.target.value);
+            });
+
+            dashboardGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.card');
+                if (card) {
+                    const content = contentData.find(item => item.id === card.dataset.id);
+                    if (content) {
+                        modalBody.innerHTML = content.body;
+                        infoModal.classList.add('active');
+                        initializeModalContent();
+                    }
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                infoModal.classList.remove('active');
+                modalBody.innerHTML = '';
+            });
+
+            showAskFormBtn.addEventListener('click', () => {
+                askModal.classList.add('active');
+            });
+            
+            closeAskModalBtn.addEventListener('click', () => {
+                askModal.classList.remove('active');
+                formMessage.innerHTML = '';
+            });
+
+            askForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                formMessage.innerHTML = `<div class="result-box result-info">Mengirim pertanyaan...</div>`;
+
+                const nama = document.getElementById('nama_pegawai').value;
+                const nip = document.getElementById('nip').value;
+                const pertanyaan = document.getElementById('pertanyaan').value;
+                
+                // This URL is a placeholder. You MUST replace it with your actual deployed Google Apps Script Web App URL.
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbxyjzMNT7gob-6tQF7SQkTDHPwennjoU4hMbu0wy8Q5rO2s64sVnvwo0yK0_EbwrcDs/exec'; 
+
+                const data = {
+                    nama_pegawai: nama,
+                    nip: nip,
+                    pertanyaan: pertanyaan
+                };
+
+                try {
+                    const response = await fetch(scriptUrl, {
+                        method: 'POST',
+                        body: JSON.stringify(data),
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    
+                    const result = await response.json();
+
+                    if (response.ok && result.status === 'success') {
+                        formMessage.innerHTML = `<div class="result-box result-valid">Pertanyaan berhasil dikirim! Tim admin akan segera meninjau.</div>`;
+                        askForm.reset();
+                    } else {
+                        throw new Error(result.error || 'Server response was not ok.');
+                    }
+                } catch (error) {
+                    console.error('Error submitting form:', error);
+                    formMessage.innerHTML = `<div class="result-box result-invalid">Gagal mengirim pertanyaan. Pastikan URL skrip Anda sudah benar dan di-deploy sebagai Web App.</div>`;
+                }
+
+            });
+
+
+            function initializeModalContent() {
+                // --- Document Validator Logic ---
+                const validateBtn = document.getElementById('validate-btn');
+                const docTypeSelect = document.getElementById('doc-type');
+                const docYearInput = document.getElementById('doc-year');
+                const validationResultDiv = document.getElementById('validation-result');
+
+                if (validateBtn) {
+                    validateBtn.addEventListener('click', () => {
+                        const docType = docTypeSelect.value;
+                        const docYear = parseInt(docYearInput.value, 10);
+                        let resultHTML = '';
+
+                        if (!docType || !docYear) {
+                            resultHTML = `<div class="result-box result-invalid"><strong>Gagal:</strong> Mohon lengkapi jenis dokumen dan tahun terbit.</div>`;
+                            validationResultDiv.innerHTML = resultHTML;
+                            return;
+                        }
+
+                        const isSertifikasi = docType === 'sertifikasi-profesional';
+                        const isValidYear = (currentYear - docYear) <= 3;
+
+                        if (isSertifikasi) {
+                            resultHTML += `<div class="result-box result-info">
+                                <strong>Kategori:</strong> Ini adalah <strong>SERTIFIKASI PROFESIONAL</strong>.
+                                <br><strong>Tindakan:</strong> Silakan unggah secara manual di menu <strong>Sertifikasi</strong> pada aplikasi PARHATA.
+                            </div>`;
+                            if (isValidYear) {
+                                resultHTML += `<div class="result-box result-valid mt-4">
+                                    <strong>Status:</strong> Dokumen Anda <strong>VALID</strong> (berlaku maksimal 3 tahun).
+                                </div>`;
+                            } else {
+                                resultHTML += `<div class="result-box result-invalid mt-4">
+                                    <strong>Status:</strong> Dokumen Anda <strong>TIDAK BERLAKU</strong> karena sudah lebih dari 3 tahun.
+                                </div>`;
+                            }
+                        } else {
+                            resultHTML += `<div class="result-box result-info">
+                                <strong>Kategori:</strong> Ini adalah <strong>SERTIFIKAT PELATIHAN/KEHADIRAN</strong>.
+                                <br><strong>Tindakan:</strong> Silakan unggah di <strong>SIMPEG</strong>. Data akan ditarik otomatis ke PARHATA setelah diverifikasi.
+                            </div>`;
+                             if (docYear < 2023) {
+                                 resultHTML += `<div class="result-box result-invalid mt-4">
+                                    <strong>Perhatian:</strong> Dokumen ini mungkin tidak akan ditarik ke PARHATA karena diterbitkan sebelum tahun 2023.
+                                </div>`;
+                            }
+                        }
+                        validationResultDiv.innerHTML = resultHTML;
+                    });
+                }
+            
+                // --- Achievement Calculator Logic ---
+                const achievementTypeSelect = document.getElementById('achievement-type');
+                const achievementResultDiv = document.getElementById('achievement-result');
+    
+                if (achievementTypeSelect) {
+                    achievementTypeSelect.addEventListener('change', () => {
+                        const achievementType = achievementTypeSelect.value;
+                        let resultHTML = '';
+    
+                        switch (achievementType) {
+                            case 'penghargaan-terbaik':
+                                resultHTML = `<div class="result-box result-info">
+                                    <strong>Predikat Kinerja:</strong> Di Atas Ekspektasi.
+                                    <br><strong>Dampak:</strong> Tergantung peran Anda di tim (Ketua: Sedang, Anggota: Rendah).
+                                    <br><strong>Bukti Dukung:</strong> Sertifikat/piagam penghargaan dan SK tim.
+                                </div>`;
+                                break;
+                            case 'ketua-tim':
+                                resultHTML = `<div class="result-box result-info">
+                                    <strong>Predikat Kinerja:</strong> Sesuai Ekspektasi (sesuai SKP).
+                                    <br><strong>Dampak:</strong> Dampak Sedang.
+                                    <br><strong>Bukti Dukung:</strong> SK penunjukan sebagai ketua tim.
+                                </div>`;
+                                break;
+                            case 'anggota-tim':
+                                 resultHTML = `<div class="result-box result-info">
+                                    <strong>Predikat Kinerja:</strong> Sesuai Ekspektasi (sesuai SKP).
+                                    <br><strong>Dampak:</strong> Dampak Rendah.
+                                    <br><strong>Bukti Dukung:</strong> SK penunjukan sebagai anggota tim.
+                                </div>`;
+                                break;
+                            case 'plt':
+                                resultHTML = `<div class="result-box result-info">
+                                    <strong>Predikat Kinerja:</strong> Sesuai Ekspektasi (sesuai SKP).
+                                    <br><strong>Dampak:</strong> Dampak Sedang.
+                                    <br><strong>Bukti Dukung:</strong> SK penunjukan sebagai Plt.
+                                </div>`;
+                                break;
+                            case 'tanpa-penghargaan':
+                                resultHTML = `<div class="result-box result-info">
+                                    <strong>Keterangan:</strong> Jika Anda hanya berperan dalam tim tanpa meraih penghargaan, cukup catat peran Anda (Ketua/Anggota) untuk menentukan dampaknya.
+                                    <br><strong>Dampak:</strong> Tergantung peran (Ketua: Sedang, Anggota: Rendah).
+                                    <br><strong>Bukti Dukung:</strong> SK tim.
+                                </div>`;
+                                break;
+                            default:
+                                resultHTML = '';
+                        }
+                        achievementResultDiv.innerHTML = resultHTML;
+                    });
+                }
+    
+                // --- URL Validator Logic ---
+                const checkUrlBtn = document.getElementById('check-url-btn');
+                const urlInput = document.getElementById('url-input');
+                const urlResultDiv = document.getElementById('url-result');
+                if (checkUrlBtn) {
+                    checkUrlBtn.addEventListener('click', async () => {
+                        const url = urlInput.value;
+                        if (!url) {
+                            urlResultDiv.innerHTML = `<div class="result-box result-invalid">Mohon masukkan URL terlebih dahulu.</div>`;
+                            return;
+                        }
+                        
+                        urlResultDiv.innerHTML = `<div class="result-box result-info">Sedang memeriksa URL...</div>`;
+        
+                        const regex = /^(http|https):\/\/[^ "]+$/;
+                        if (!regex.test(url)) {
+                            urlResultDiv.innerHTML = `<div class="result-box result-invalid">Format URL tidak valid. Contoh format: https://parhata.bps.web.id</div>`;
+                            return;
+                        }
+        
+                        try {
+                            const prompt = `Periksa URL ini: ${url}. Apakah URL ini aman, terpercaya, dan bebas dari masalah seperti akses ditolak, sertifikat tidak valid, atau masalah jaringan? Jawab dengan ringkas dan jelas. Fokus pada status akses dan keamanan.`;
+                            
+                            const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                            const payload = { contents: chatHistory };
+                            const apiKey = "";
+                            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                            
+                            const response = await fetch(apiUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            
+                            const result = await response.json();
+                            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            urlResultDiv.innerHTML = `<div class="result-box result-valid">${text || 'Tidak dapat memproses permintaan. Mohon coba lagi.'}</div>`;
+                        } catch (error) {
+                            console.error('Error calling Gemini API:', error);
+                            urlResultDiv.innerHTML = `<div class="result-box result-invalid">Terjadi kesalahan. Pastikan VPN nonaktif atau coba lagi nanti.</div>`;
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
