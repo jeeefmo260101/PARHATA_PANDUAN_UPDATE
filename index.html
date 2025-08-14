@@ -173,9 +173,68 @@
             const currentYear = 2025;
             
             // This URL is a placeholder. You MUST replace it with your actual deployed Google Apps Script Web App URL.
-            const scriptUrl = 'https://script.google.com/macros/s/AKfycbx_YOUR_APP_SCRIPT_ID_HERE/exec'; 
+            const scriptUrl = 'https://script.google.com/macros/s/AKfycbxyjzMNT7gob-6tQF7SQkTDHPwennjoU4hMbu0wy8Q5rO2s64sVnvwo0yK0_EbwrcDs/exec'; 
 
             const contentData = [
+                {
+                    id: 'pemberitahuan-resmi',
+                    title: '📢 Pemberitahuan Resmi',
+                    emoji: '📢',
+                    summary: 'Poin-poin penting mengenai kelengkapan dokumen untuk penilaian portofolio PARHATA.',
+                    body: `
+                        <h2 class="text-3xl font-bold mb-6 text-sky-700">📢 Pemberitahuan Resmi</h2>
+                        <p class="text-slate-600 mb-8">Dalam rangka kelengkapan penilaian portofolio PARHATA, disampaikan hal-hal berikut:</p>
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 flex items-start">
+                                    1. Sertifikat Kegiatan
+                                </h3>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1 text-slate-700">
+                                    <li>Sertifikat mencakup pelatihan/diklat, bimtek, mentoring/coaching, seminar, webinar, maupun e-learning.</li>
+                                    <li>Jika sertifikat tidak mencantumkan jumlah jam pelajaran (JP), **wajib dilampirkan bersama rundown acara atau materi kegiatan** yang mencantumkan JP.</li>
+                                    <li class="font-semibold">JP penting karena menjadi indikator penilaian di PARHATA.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 flex items-start">
+                                    2. Bukti Status Kegiatan
+                                </h3>
+                                <p class="text-slate-600 mt-2 mb-2">Untuk sertifikat yang tidak mencantumkan status daring/luring (online/offline), wajib dilengkapi dengan salah satu bukti berikut:</p>
+                                <ul class="list-inside ml-6 space-y-1 text-slate-700">
+                                    <li>A. Rundown acara</li>
+                                    <li>B. Undangan diklat</li>
+                                    <li>C. Tangkapan layar Zoom</li>
+                                    <li>D. Dokumentasi foto kegiatan</li>
+                                </ul>
+                                <p class="text-sm text-slate-500 mt-2 italic">
+                                    (Seluruh bukti tersebut digabungkan menjadi satu file PDF)
+                                </p>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 flex items-start">
+                                    3. Ijazah dan Transkrip Nilai
+                                </h3>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1 text-slate-700">
+                                    <li>Untuk upload ijazah baru di SIMPEG, **wajib melampirkan transkrip nilai** bersamaan.</li>
+                                    <li>Untuk ijazah yang sudah terlanjur diunggah tanpa transkrip, harap mengunggah transkripnya ke folder Google Drive tampungan yang telah disediakan.</li>
+                                    <li class="font-semibold">Data transkrip diperlukan untuk penilaian pendidikan (IPK dan predikat).</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-sky-700 flex items-start">
+                                    4. Sertifikat Sertifikasi
+                                </h3>
+                                <ul class="list-disc list-inside ml-6 mt-2 space-y-1 text-slate-700">
+                                    <li>Sertifikasi profesional (BNT, PPK, Auditor, Brevet, UKOM, dll.) harus dimasukkan ke portofolio **Sertifikasi di aplikasi PARHATA**.</li>
+                                    <li class="font-semibold">SIMPEG menampung semua sertifikat tanpa klasifikasi, sedangkan PARHATA membutuhkan klasifikasi untuk penilaian.</li>
+                                    <li>Pastikan sertifikat jenis ini dimasukkan ke bagian yang benar di PARHATA.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-8 text-center text-gray-600 font-medium">Mohon memastikan kelengkapan dokumen agar usulan dapat diterima sesuai indikator penilaian PARHATA.</p>
+                        <p class="mt-2 text-center text-gray-700 font-semibold">Terima kasih atas kerja samanya.</p>
+                    `
+                },
                 {
                     id: 'alur-kerja',
                     title: '🚀 Alur Kerja Utama',
